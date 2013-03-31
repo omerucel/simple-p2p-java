@@ -22,12 +22,10 @@ import java.util.logging.Logger;
 public class Application {
     private ServerSocket serverSocket;
     private HashMap<String, PeerClient> peers;
-    private HashMap<String, FileInfo> files;
 
     public Application()
     {
         peers = new HashMap<String, PeerClient>();
-        files = new HashMap<String, FileInfo>();
     }
 
     public void run()
