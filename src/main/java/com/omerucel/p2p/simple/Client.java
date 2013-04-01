@@ -239,4 +239,9 @@ public class Client extends CommandAbstract implements Runnable{
     {
         emit("response-search", jsonObject);
     }
+
+    public void responseUPDATE(JSONObject jsonObject)
+    {
+        log("response-update");
+    }
 }
