@@ -140,7 +140,7 @@ public class Database {
         try {
             Statement statement = newStatement();
             ResultSet resultSet = statement.executeQuery(
-                    "SELECT name, "
+                    "SELECT name, file_hash, "
                     + "(SELECT COUNT(*) FROM client_file "
                     + "WHERE file_hash = pf.file_hash) AS client_count "
                     + "FROM client_file pf WHERE name LIKE '" + name + "%' "
@@ -150,7 +150,7 @@ public class Database {
                 Map temp = new LinkedHashMap();
                 temp.put("name", resultSet.getString("name"));
                 temp.put("client_count", resultSet.getInt("client_count"));
-                temp.put("hash", resultSet.getString("hash"));
+                temp.put("hash", resultSet.getString("file_hash"));
                 files.add(temp);
             }
             resultSet.close();
