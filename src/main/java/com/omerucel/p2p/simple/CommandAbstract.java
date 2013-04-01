@@ -33,7 +33,7 @@ public class CommandAbstract {
         notifyAll();
     }
 
-    public void emit(String event)
+    public void emit(String event, Object data)
     {
         if (!callbacks.containsKey(event)) return;
 
@@ -41,7 +41,7 @@ public class CommandAbstract {
 
         for(Command command : callbacks.get(event))
         {
-            command.execute(null);
+            command.execute(data);
         }
     }
 }

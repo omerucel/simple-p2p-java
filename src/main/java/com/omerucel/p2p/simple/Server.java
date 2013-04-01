@@ -62,7 +62,7 @@ public class Server extends CommandAbstract implements Runnable
 
         try {
             serverSocket = new ServerSocket(9090);
-            emit("started");
+            emit("started", null);
 
             while(!serverSocket.isClosed())
             {
@@ -70,10 +70,10 @@ public class Server extends CommandAbstract implements Runnable
                 new Thread(new Client(this, socket)).start();
             }
 
-            emit("stopped");
+            emit("stopped", null);
         } catch (IOException ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
-            emit("starting-failed");
+            emit("starting-failed", null);
         }
     }
 

@@ -104,10 +104,10 @@ public class Client extends CommandAbstract implements Runnable{
         {
             try {
                 socket = new Socket(host, 9090);
-                emit("connected");
+                emit("connected", null);
             } catch (Exception ex) {
                 log(ex.getMessage());
-                emit("connection-failed");
+                emit("connection-failed", null);
                 return;
             }
         }
@@ -170,10 +170,10 @@ public class Client extends CommandAbstract implements Runnable{
             out.close();
             socket.close();
 
-            emit("disconnected");
+            emit("disconnected", null);
         } catch (IOException ex) {
             log(ex.getMessage());
-            emit("connection-failed");
+            emit("connection-failed", null);
         }
     }
 
@@ -228,5 +228,15 @@ public class Client extends CommandAbstract implements Runnable{
             result.put("peers", server.getFileClients(jsonObject.get("hash").toString()));
             sendLine(result);
         }
+    }
+
+    public void responseWELCOME(JSONObject jsonObject)
+    {
+        emit("response-welcome", jsonObject);
+    }
+
+    public void responseSEARCH(JSONObject jsonObject)
+    {
+        emit("response-search", jsonObject);
     }
 }

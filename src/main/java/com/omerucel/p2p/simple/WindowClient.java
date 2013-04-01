@@ -32,16 +32,26 @@ public class WindowClient extends javax.swing.JFrame {
 
     public void searchLoading(Boolean status)
     {
-        searchButton.setEnabled(status);
-        searchQuery.setEnabled(status);
+        searchButton.setEnabled(!status);
+        searchQuery.setEnabled(!status);
     }
 
-    public static class OnSearchResponse implements CommandAbstract.Command
+    public static class OnResponseSearch implements CommandAbstract.Command
     {
         public void execute(Object data)
         {
             System.out.println("on-search-response");
             WindowClient.getInstance().searchLoading(false);
+        }
+    }
+
+    public static class OnResponseWelcome implements CommandAbstract.Command
+    {
+        public void execute(Object data)
+        {
+            System.out.println("on-welcome");
+            WindowClient.getInstance().setTitle("Client ID : " 
+                    + ((JSONObject)data).get("id").toString());
         }
     }
 
