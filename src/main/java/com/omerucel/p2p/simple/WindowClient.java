@@ -26,6 +26,7 @@ import org.json.simple.JSONObject;
 public class WindowClient extends javax.swing.JFrame {
 
     private static WindowClient instance;
+    DefaultTableModel searchFileTableModel;
 
     static WindowClient getInstance() {
         if (instance == null)
@@ -39,6 +40,12 @@ public class WindowClient extends javax.swing.JFrame {
      */
     public WindowClient() {
         initComponents();
+
+        searchFileTableModel = new DefaultTableModel();
+        searchFileTableModel.addColumn("Dosya Adı");
+        searchFileTableModel.addColumn("Eş Sayısı");
+        searchFileTableModel.addColumn("Dosya Boyutu");
+        searchFileTable.setModel(searchFileTableModel);
     }
 
     public void searchLoading(Boolean status)
@@ -49,13 +56,13 @@ public class WindowClient extends javax.swing.JFrame {
 
     public void clearSearchList()
     {
-        searchFileTable.removeAll();
+        for(int i = 0; i< searchFileTableModel.getRowCount(); i++)
+            searchFileTableModel.removeRow(i);
     }
 
     public void addToSearchList(String name, int clientCount, String size)
     {
-        ((DefaultTableModel)searchFileTable.getModel())
-                .addColumn(new Object[]{name, size, clientCount});
+        searchFileTableModel.addRow(new Object[]{name, size, clientCount});
     }
 
     public static class OnResponseSearch implements CommandAbstract.Command
@@ -79,7 +86,7 @@ public class WindowClient extends javax.swing.JFrame {
                         WindowClient.getInstance()
                                 .addToSearchList(
                                     temp.get("name").toString(),
-                                    Integer.getInteger(temp.get("client_count").toString()),
+                                    1,
                                     "10 MB");
                     }
                 }
