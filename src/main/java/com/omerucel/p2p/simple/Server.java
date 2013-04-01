@@ -46,6 +46,15 @@ public class Server extends CommandAbstract implements Runnable
         this.mode = mode;
     }
 
+    public void stopServer()
+    {
+        try {
+            serverSocket.close();
+        } catch (IOException ex) {
+            log(ex.getMessage());
+        }
+    }
+
     public void log(String message)
     {
         if (mode == MAIN_SERVER && this.window != null)

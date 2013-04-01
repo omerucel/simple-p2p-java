@@ -4,6 +4,8 @@
  */
 package com.omerucel.p2p.simple;
 
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author omer
@@ -44,7 +46,7 @@ public class WindowMainServer extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
         jButton1 = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
         jTextArea1.setEditable(false);
         jTextArea1.setColumns(20);
@@ -52,6 +54,11 @@ public class WindowMainServer extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTextArea1);
 
         jButton1.setText("Sunucuyu Kapat");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -73,6 +80,16 @@ public class WindowMainServer extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+
+        int status = JOptionPane.showConfirmDialog(this, "Sunucuyu kapatmak istediğinize emin misiniz?");
+        if (status == JOptionPane.YES_OPTION)
+        {
+            Server.getInstance().stopServer();
+            System.exit(0);
+        }
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments
