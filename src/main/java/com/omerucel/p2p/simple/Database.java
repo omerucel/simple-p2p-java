@@ -133,9 +133,10 @@ public class Database {
         notifyAll();
     }
 
-    public Map searchFile(String name)
+    public ArrayList<Map> searchFile(String name)
     {
-        Map files = new LinkedHashMap();
+        ArrayList<Map> files = new ArrayList<Map>();
+
         try {
             Statement statement = newStatement();
             ResultSet resultSet = statement.executeQuery(
@@ -146,8 +147,11 @@ public class Database {
                     + "ORDER BY name ASC");
             while(resultSet.next())
             {
-                files.put(resultSet.getString("name").toString()
-                        , resultSet.getInt("client_count"));
+                Map temp = new LinkedHashMap();
+                temp.put("name", resultSet.getString("name"));
+                temp.put("client_count", resultSet.getInt("client_count"));
+                temp.put("hash", resultSet.getString("hash"));
+                files.add(temp);
             }
             resultSet.close();
             statement.close();
