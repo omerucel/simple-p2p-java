@@ -74,6 +74,7 @@ public class WindowStart extends javax.swing.JFrame {
                 Client client = new Client(jTextField1.getText());
                 client.on("connection-failed", new OnClientConnectionFailed());
                 client.on("connected", new OnClientConnected());
+                client.on("search-response", new WindowClient.OnSearchResponse());
                 ClientFactory.setMainServerClient(client);
                 new Thread(client).start();
             }else{

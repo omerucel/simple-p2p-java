@@ -85,7 +85,18 @@ public class Client extends CommandAbstract implements Runnable{
 
     public void sendLine(Map result)
     {
+        log("Send : " + JSONValue.toJSONString(result));
         out.println(JSONValue.toJSONString(result));
+    }
+
+    public void log(String message)
+    {
+        if (mode == MAIN_SERVER_CLIENT)
+        {
+            this.server.log(message);
+        }else{
+            System.out.println(message);
+        }
     }
 
     public void run() {
@@ -95,8 +106,7 @@ public class Client extends CommandAbstract implements Runnable{
                 socket = new Socket(host, 9090);
                 emit("connected");
             } catch (Exception ex) {
-                Logger.getLogger(Client.class.getName())
-                        .log(Level.SEVERE, null, ex);
+                log(ex.getMessage());
                 emit("connection-failed");
                 return;
             }
@@ -113,11 +123,13 @@ public class Client extends CommandAbstract implements Runnable{
             JSONParser jsonParser = new JSONParser();
             while(run && (line = in.readLine().trim()) != null)
             {
+                log("Received : " + line);
                 try {
                     JSONObject jsonObject = (JSONObject)jsonParser.parse(line);
 
-                    if (jsonObject.containsKey("request"))
-                    {
+                    if (jsonObject.containsKey("error")){
+                        continue;
+                    }else if (jsonObject.containsKey("request")){
                         String request = jsonObject.get("request").toString();
 
                         try {
@@ -126,18 +138,27 @@ public class Client extends CommandAbstract implements Runnable{
                                     JSONObject.class);
                             method.invoke(this, jsonObject);
                         } catch (Exception ex) {
-                            Logger.getLogger(this.getClass().getName())
-                                    .log(Level.SEVERE, null, ex);
+                            log(ex.getMessage());
                             sendError("Error.003");
                         }
+                    }else if(jsonObject.containsKey("response")){
+                        String response = jsonObject.get("response").toString();
 
+                        try {
+                            Method method = this.getClass().getMethod(
+                                    "response" + response.toUpperCase(Locale.US),
+                                    JSONObject.class);
+                            method.invoke(this, jsonObject);
+                        } catch (Exception ex) {
+                            log(ex.getMessage());
+                            sendError("Error.003");
+                        }
                     }else{
                         sendError("Error.002");
                     }
 
                 } catch (ParseException ex) {
-                    Logger.getLogger(this.getClass().getName())
-                            .log(Level.SEVERE, null, ex);
+                    log(ex.getMessage());
                     sendError("Error.001");
                 }
             }
@@ -151,8 +172,7 @@ public class Client extends CommandAbstract implements Runnable{
 
             emit("disconnected");
         } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName())
-                    .log(Level.SEVERE, null, ex);
+            log(ex.getMessage());
             emit("connection-failed");
         }
     }
