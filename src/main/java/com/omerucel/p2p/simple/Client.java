@@ -194,6 +194,9 @@ public class Client extends CommandAbstract implements Runnable{
                 JSONObject temp = (JSONObject)file;
                 if (temp.containsKey("name") && temp.containsKey("hash"))
                 {
+                    server.addNewFile(this, 
+                            temp.get("hash").toString(), 
+                            temp.get("name").toString());
                 }
             }
 
