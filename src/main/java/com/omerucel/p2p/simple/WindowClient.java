@@ -4,8 +4,19 @@
  */
 package com.omerucel.p2p.simple;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFileChooser;
+import javax.swing.table.DefaultTableModel;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -36,11 +47,44 @@ public class WindowClient extends javax.swing.JFrame {
         searchQuery.setEnabled(!status);
     }
 
+    public void clearSearchList()
+    {
+        searchFileTable.removeAll();
+    }
+
+    public void addToSearchList(String name, int clientCount, String size)
+    {
+        ((DefaultTableModel)searchFileTable.getModel())
+                .addColumn(new Object[]{name, size, clientCount});
+    }
+
     public static class OnResponseSearch implements CommandAbstract.Command
     {
         public void execute(Object data)
         {
-            System.out.println("on-search-response");
+            WindowClient.getInstance().clearSearchList();
+
+            JSONObject jsonObject = (JSONObject)data;
+            if (jsonObject.containsKey("files") 
+                    && jsonObject.get("files") instanceof JSONArray)
+            {
+                for(Object file : (JSONArray) jsonObject.get("files"))
+                {
+                    JSONObject temp = (JSONObject)file;
+
+                    if (temp.containsKey("name") 
+                            && temp.containsKey("hash")
+                            && temp.containsKey("client_count"))
+                    {
+                        WindowClient.getInstance()
+                                .addToSearchList(
+                                    temp.get("name").toString(),
+                                    Integer.getInteger(temp.get("client_count").toString()),
+                                    "10 MB");
+                    }
+                }
+            }
+
             WindowClient.getInstance().searchLoading(false);
         }
     }
@@ -49,9 +93,39 @@ public class WindowClient extends javax.swing.JFrame {
     {
         public void execute(Object data)
         {
-            System.out.println("on-welcome");
             WindowClient.getInstance().setTitle("Client ID : " 
                     + ((JSONObject)data).get("id").toString());
+
+            JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setMultiSelectionEnabled(false);
+
+            int returnVal = fc.showOpenDialog(WindowClient.getInstance());
+            if (returnVal == JFileChooser.APPROVE_OPTION)
+            {
+                File folder = fc.getSelectedFile();
+
+                ArrayList<Map> files = new ArrayList<Map>();
+                for(File file : folder.listFiles())
+                {
+                    if (file.isDirectory()) continue;
+
+                    try {
+                        Map temp = new LinkedHashMap();
+                        temp.put("name", file.getAbsoluteFile().getName());
+                        temp.put("hash", DigestUtils.md5Hex(new FileInputStream(file)));
+                        files.add(temp);
+                    } catch (IOException ex) {
+                        Logger.getLogger(WindowClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+
+                Map request = new LinkedHashMap();
+                request.put("request", "update");
+                request.put("files", files);
+
+                ClientFactory.getMainServerClient().sendLine(request);
+            }
         }
     }
 

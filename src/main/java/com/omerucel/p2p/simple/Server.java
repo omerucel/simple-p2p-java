@@ -103,7 +103,7 @@ public class Server extends CommandAbstract implements Runnable
         Database.getInstance().addFile(client.getId(), hash, name);
     }
 
-    public Map searchFile(String name)
+    public ArrayList<Map> searchFile(String name)
     {
         return Database.getInstance().searchFile(name);
     }
