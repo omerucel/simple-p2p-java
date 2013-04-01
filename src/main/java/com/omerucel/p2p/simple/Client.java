@@ -96,13 +96,14 @@ public class Client extends CommandAbstract implements Runnable{
                 emit("connection-failed");
                 return;
             }
-        }else{
-            this.server.connectedClient(this);
         }
 
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
+
+            if (mode == MAIN_SERVER_CLIENT)
+                this.server.connectedClient(this);
 
             String line;
             JSONParser jsonParser = new JSONParser();
@@ -137,6 +138,9 @@ public class Client extends CommandAbstract implements Runnable{
                 }
             }
 
+            if (mode == MAIN_SERVER_CLIENT)
+                this.server.disconnectedClient(this);
+
             in.close();
             out.close();
             socket.close();
@@ -147,9 +151,6 @@ public class Client extends CommandAbstract implements Runnable{
                     .log(Level.SEVERE, null, ex);
             emit("connection-failed");
         }
-
-        if (mode == MAIN_SERVER_CLIENT)
-            this.server.disconnectedClient(this);
     }
 
     public void handleEXIT(JSONObject jsonObject)

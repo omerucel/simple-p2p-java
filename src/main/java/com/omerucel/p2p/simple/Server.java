@@ -95,11 +95,6 @@ public class Server extends CommandAbstract implements Runnable
     {
         Database.getInstance().removeClient(client.getId());
         System.out.println(client + " disconnected");
-
-        Map result = new LinkedHashMap();
-        result.put("response", "bye");
-
-        client.sendLine(result);
         notifyAll();
     }
 
