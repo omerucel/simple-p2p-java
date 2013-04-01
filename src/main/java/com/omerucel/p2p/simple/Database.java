@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.omerucel.p2p.server;
+package com.omerucel.p2p.simple;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -23,10 +23,6 @@ import java.util.logging.Logger;
 public class Database {
     private static Database instance;
     Connection connection;
-
-    public interface IQuery{
-        public void run(Statement statement) throws SQLException;
-    };
 
     public synchronized static Database getInstance()
     {
@@ -49,9 +45,12 @@ public class Database {
 
             connection = DriverManager.getConnection("jdbc:sqlite::memory:");
             Statement statement = newStatement();
-            statement.executeUpdate("CREATE TABLE file(hash string, size int);");
-            statement.executeUpdate("CREATE TABLE peer(hash string, ip string);");
-            statement.executeUpdate("CREATE TABLE peer_file(file_hash string, peer_hash string, name string);");
+            statement.executeUpdate("CREATE TABLE "
+                    + "file(hash string, size int);");
+            statement.executeUpdate("CREATE TABLE "
+                    + "client(hash string, ip string);");
+            statement.executeUpdate("CREATE TABLE "
+                    + "client_file(file_hash string, client_hash string, name string);");
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -74,11 +73,12 @@ public class Database {
         }
     }
 
-    public synchronized void addPeer(String hash, String ip)
+    public synchronized void addClient(String hash, String ip)
     {
         try {
             Statement statement = newStatement();
-            statement.executeUpdate("INSERT INTO peer(hash, ip) VALUES('" + hash + "', '" + ip + "')");
+            statement.executeUpdate("INSERT INTO client(hash, ip) "
+                    + "VALUES('" + hash + "', '" + ip + "')");
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -86,11 +86,12 @@ public class Database {
         notifyAll();
     }
 
-    public synchronized void removePeer(String hash)
+    public synchronized void removeClient(String hash)
     {
         try {
             Statement statement = newStatement();
-            statement.executeUpdate("DELETE FROM peer WHERE hash = '" + hash + "'");
+            statement.executeUpdate("DELETE FROM client "
+                    + "WHERE hash = '" + hash + "'");
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -98,16 +99,20 @@ public class Database {
         notifyAll();
     }
 
-    public synchronized void addFile(String peerHash, String hash, String name)
+    public synchronized void addFile(String clientHash, String hash, String name)
     {
         try {
             Statement statement = newStatement();
-            ResultSet rs = statement.executeQuery("SELECT COUNT(*) AS count FROM file WHERE hash = '" + hash + "'");
+            ResultSet rs = statement.executeQuery("SELECT COUNT(*) AS count "
+                    + "FROM file WHERE hash = '" + hash + "'");
             rs.next();
             if (rs.getInt("count") == 0)
-                statement.executeUpdate("INSERT INTO file(hash) VALUES('" + hash + "')");
+                statement.executeUpdate("INSERT INTO file(hash) "
+                        + "VALUES('" + hash + "')");
             rs.close();
-            statement.executeUpdate("INSERT INTO peer_file(file_hash, peer_hash, name) VALUES('" + hash + "', '" + peerHash + "', '" + name + "')");
+            statement.executeUpdate("INSERT INTO "
+                    + "client_file(file_hash, client_hash, name) "
+                    + "VALUES('" + hash + "', '" + clientHash + "', '" + name + "')");
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -119,7 +124,8 @@ public class Database {
     {
         try {
             Statement statement = newStatement();
-            statement.executeUpdate("DELETE FROM file WHERE hash = '" + hash + "'");
+            statement.executeUpdate("DELETE FROM file "
+                    + "WHERE hash = '" + hash + "'");
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -132,10 +138,16 @@ public class Database {
         Map files = new LinkedHashMap();
         try {
             Statement statement = newStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT name, (SELECT COUNT(*) FROM peer_file WHERE file_hash = pf.file_hash) AS peer_count FROM peer_file pf WHERE name LIKE '" + name + "%' ORDER BY name ASC");
+            ResultSet resultSet = statement.executeQuery(
+                    "SELECT name, "
+                    + "(SELECT COUNT(*) FROM client_file "
+                    + "WHERE file_hash = pf.file_hash) AS client_count "
+                    + "FROM client_file pf WHERE name LIKE '" + name + "%' "
+                    + "ORDER BY name ASC");
             while(resultSet.next())
             {
-                files.put(resultSet.getString("name").toString(), resultSet.getInt("peer_count"));
+                files.put(resultSet.getString("name").toString()
+                        , resultSet.getInt("client_count"));
             }
             resultSet.close();
             statement.close();
@@ -147,21 +159,25 @@ public class Database {
         }
     }
 
-    public ArrayList<String> getFilePeers(String hash)
+    public ArrayList<String> getFileClients(String hash)
     {
-        ArrayList<String> peers = new ArrayList<String>();
+        ArrayList<String> clients = new ArrayList<String>();
 
         try {
             Statement statement = newStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT ip FROM peer WHERE hash IN (SELECT peer_hash FROM peer_file WHERE file_hash = '" + hash + "') GROUP BY ip");
+            ResultSet resultSet = statement.executeQuery("SELECT ip FROM client "
+                    + "WHERE hash IN "
+                    + "(SELECT client_hash FROM client_file "
+                    + "WHERE file_hash = '" + hash + "') "
+                    + "GROUP BY ip");
             while(resultSet.next())
-                peers.add(resultSet.getString("ip"));
+                clients.add(resultSet.getString("ip"));
             resultSet.close();
             statement.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return peers;
+        return clients;
     }
 }
