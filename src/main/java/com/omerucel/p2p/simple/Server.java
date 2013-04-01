@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
-import org.json.simple.JSONValue;
 
 /**
  *
@@ -81,12 +80,12 @@ public class Server extends CommandAbstract implements Runnable
     public synchronized void connectedClient(Client client)
     {
         Database.getInstance().addClient(client.getId(), client.getIp());
-        System.out.println(client + " connected");
+        log(client + " connected");
 
         Map result = new LinkedHashMap();
         result.put("response", "welcome");
         result.put("id", client.getId());
-
+        
         client.sendLine(result);
         notifyAll();
     }
@@ -94,13 +93,13 @@ public class Server extends CommandAbstract implements Runnable
     public synchronized void disconnectedClient(Client client)
     {
         Database.getInstance().removeClient(client.getId());
-        System.out.println(client + " disconnected");
+        log(client + " disconnected");
         notifyAll();
     }
 
     public void addNewFile(Client client, String hash, String name)
     {
-        System.out.println(client + " added a file : " + hash + " " + name);
+        log(client + " added a file : " + hash + " " + name);
         Database.getInstance().addFile(client.getId(), hash, name);
     }
 

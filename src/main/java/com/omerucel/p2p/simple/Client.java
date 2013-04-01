@@ -6,12 +6,10 @@ package com.omerucel.p2p.simple;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -71,6 +69,12 @@ public class Client extends CommandAbstract implements Runnable{
         return this.socket.getInetAddress().getHostAddress().toString();
     }
 
+    @Override
+    public String toString()
+    {
+        return this.getId();
+    }
+
     public void sendError(String message)
     {
         Map result = new LinkedHashMap();
@@ -118,7 +122,7 @@ public class Client extends CommandAbstract implements Runnable{
 
                         try {
                             Method method = this.getClass().getMethod(
-                                    "handle" + request.toUpperCase(Locale.US),
+                                    "request" + request.toUpperCase(Locale.US),
                                     JSONObject.class);
                             method.invoke(this, jsonObject);
                         } catch (Exception ex) {
@@ -153,12 +157,12 @@ public class Client extends CommandAbstract implements Runnable{
         }
     }
 
-    public void handleEXIT(JSONObject jsonObject)
+    public void requestEXIT(JSONObject jsonObject)
     {
         run = false;
     }
 
-    public void handleUPDATE(JSONObject jsonObject)
+    public void requestUPDATE(JSONObject jsonObject)
     {
         if (mode != MAIN_SERVER_CLIENT) return;
 
@@ -180,7 +184,7 @@ public class Client extends CommandAbstract implements Runnable{
         }
     }
 
-    public void handleSEARCH(JSONObject jsonObject)
+    public void requestSEARCH(JSONObject jsonObject)
     {
         if (mode != MAIN_SERVER_CLIENT) return;
 
@@ -193,7 +197,7 @@ public class Client extends CommandAbstract implements Runnable{
         }
     }
 
-    public void handleDOWNLOAD(JSONObject jsonObject)
+    public void requestDOWNLOAD(JSONObject jsonObject)
     {
         if (mode != MAIN_SERVER_CLIENT) return;
 
