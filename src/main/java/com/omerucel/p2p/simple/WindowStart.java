@@ -101,6 +101,9 @@ public class WindowStart extends javax.swing.JFrame {
         public void execute(Object data)
         {
             WindowStart.getInstance().setVisible(false);
+            ClientFactory.getMainServerClient().clearEvents("connection-failed");
+            ClientFactory.getMainServerClient().on("connection-failed", new WindowClient.OnDisconnected());
+            ClientFactory.getMainServerClient().on("disconnected", new WindowClient.OnDisconnected());
             WindowClient.getInstance().setVisible(true);
         }
     }

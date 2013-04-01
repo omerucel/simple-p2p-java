@@ -33,6 +33,12 @@ public class CommandAbstract {
         notifyAll();
     }
 
+    public synchronized void clearEvents(String event)
+    {
+        callbacks.remove(event);
+        notifyAll();
+    }
+
     public void emit(String event, Object data)
     {
         if (!callbacks.containsKey(event)) return;

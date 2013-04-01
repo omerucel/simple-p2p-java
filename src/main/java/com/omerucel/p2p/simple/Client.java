@@ -69,6 +69,11 @@ public class Client extends CommandAbstract implements Runnable{
         return this.socket.getInetAddress().getHostAddress().toString();
     }
 
+    public void setRun(Boolean status)
+    {
+        this.run = status;
+    }
+
     @Override
     public String toString()
     {
@@ -121,8 +126,11 @@ public class Client extends CommandAbstract implements Runnable{
 
             String line;
             JSONParser jsonParser = new JSONParser();
-            while(run && (line = in.readLine().trim()) != null)
+            while(run)
             {
+                line = in.readLine().trim();
+                if (line == null) continue;
+
                 log("Received : " + line);
                 try {
                     JSONObject jsonObject = (JSONObject)jsonParser.parse(line);
@@ -180,6 +188,11 @@ public class Client extends CommandAbstract implements Runnable{
     public void requestEXIT(JSONObject jsonObject)
     {
         run = false;
+
+        Map result = new LinkedHashMap();
+        result.put("response", "exit");
+
+        sendLine(result);
     }
 
     public void requestUPDATE(JSONObject jsonObject)
@@ -231,6 +244,11 @@ public class Client extends CommandAbstract implements Runnable{
             result.put("peers", server.getFileClients(jsonObject.get("hash").toString()));
             sendLine(result);
         }
+    }
+
+    public void responseEXIT(JSONObject jsonObject)
+    {
+        run = false;
     }
 
     public void responseWELCOME(JSONObject jsonObject)

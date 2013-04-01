@@ -90,6 +90,8 @@ public class Database {
     {
         try {
             Statement statement = newStatement();
+            statement.executeUpdate("DELETE FROM client_file "
+                    + "WHERE client_hash = '" + hash + "'");
             statement.executeUpdate("DELETE FROM client "
                     + "WHERE hash = '" + hash + "'");
             statement.close();
