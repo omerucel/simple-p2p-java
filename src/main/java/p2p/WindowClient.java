@@ -140,7 +140,7 @@ public class WindowClient extends WindowAbstract {
 
         File file = new File(WindowClientStart.getInstance().getDownloadFolder() + "/" + fileInfo.get("name").toString());
         int size = Integer.parseInt(fileInfo.get("size").toString());
-        int totalPart = (size/512) + 1;
+        int totalPart = (size/524288) + 1;
 
         Map temp = new LinkedHashMap();
         temp.put("hash", fileHash);

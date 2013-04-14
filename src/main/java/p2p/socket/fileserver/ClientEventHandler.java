@@ -71,9 +71,9 @@ public class ClientEventHandler implements IClientEventHandler{
                         .getWindowClient()
                         .getFileInfo(request.getHash());
                 int fileSize = Integer.parseInt(fileInfo.get("size").toString());
-                int totalPart = (fileSize/512) + 1;
+                int totalPart = (fileSize/524288) + 1;
                 int part = request.getPart()-1;
-                int skipIndex = part*512;
+                int skipIndex = part*524288;
 
                 RandomAccessFile raf = new RandomAccessFile(
                         fileInfo.get("file_path").toString(), "r");
@@ -81,7 +81,7 @@ public class ClientEventHandler implements IClientEventHandler{
                     raf.seek(skipIndex);
 
                     ArrayList<Integer> buffer = new ArrayList<Integer>();
-                    for(int i=0;i<512;i++)
+                    for(int i=0;i<524288;i++)
                     {
                         try
                         {

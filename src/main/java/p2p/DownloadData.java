@@ -54,7 +54,7 @@ public class DownloadData {
                 raf.setLength(fileSize);
             }
 
-            raf.seek(part*512);
+            raf.seek(part*524288);
             for(Integer i : data)
                 raf.writeInt(i);
             raf.close();
