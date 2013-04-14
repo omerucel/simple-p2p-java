@@ -1,3 +1,10 @@
+İndir
+=====
+
+Sunucu uygulaması indirme bağlantısı : http://db.tt/ROmy5ep0
+
+İstemci uygulaması indirme bağlantısı : http://db.tt/pTGyiapj
+
 Paket Oluşturma
 ===============
 
