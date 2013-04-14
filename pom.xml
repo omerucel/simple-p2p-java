@@ -54,7 +54,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>p2p.WindowMainServerStart</mainClass>
+                                    <mainClass>p2p.WindowClientStart</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
