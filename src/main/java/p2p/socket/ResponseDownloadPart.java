@@ -1,17 +1,30 @@
 package p2p.socket;
 
-import java.util.ArrayList;
+import com.omerucel.socket.message.IResponse;
 
-public class ResponseDownloadPart extends RequestDownloadPart{
-    private ArrayList<Integer> data;
+public class ResponseDownloadPart implements IResponse{
+    private String hash;
+    private int part;
+    private Integer data[];
 
-    public ResponseDownloadPart(String hash, int part, ArrayList<Integer> data)
+    public ResponseDownloadPart(String hash, int part, Integer data[])
     {
-        super(hash, part);
+        this.hash = hash;
+        this.part = part;
         this.data = data;
     }
 
-    public ArrayList<Integer> getData()
+    public String getHash()
+    {
+        return this.hash;
+    }
+
+    public int getPart()
+    {
+        return this.part;
+    }
+
+    public Integer[] getData()
     {
         return this.data;
     }

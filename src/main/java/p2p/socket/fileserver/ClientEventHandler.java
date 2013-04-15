@@ -5,8 +5,8 @@ import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 import java.util.Map;
+import p2p.Config;
 import p2p.socket.FileServerClient;
 import p2p.socket.RequestDownloadPart;
 import p2p.socket.ResponseConnection;
@@ -73,32 +73,46 @@ public class ClientEventHandler implements IClientEventHandler{
                         .getShareManager()
                         .getFileInfo(request.getHash());
                 int fileSize = Integer.parseInt(fileInfo.get("size").toString());
-                int totalPart = (fileSize/524288) + 1;
-                int part = request.getPart()-1;
-                int skipIndex = part*524288;
+                int totalPart = Math.round(fileSize/Config.PART_LIMIT)+1;
+                int skipIndex = (request.getPart()-1)*Config.PART_LIMIT;
 
                 RandomAccessFile raf = new RandomAccessFile(
                         fileInfo.get("file_path").toString(), "r");
                 try {
                     raf.seek(skipIndex);
-
-                    ArrayList<Integer> buffer = new ArrayList<Integer>();
-                    for(int i=0;i<524288;i++)
+                    byte[] data = new byte[Config.PART_LIMIT];
+                    int i = 0;
+                    for(i=0;i<Config.PART_LIMIT;i++)
                     {
                         try
                         {
-                            buffer.add(raf.readInt());
+                            data[i] = raf.readByte();
                         }catch(EOFException ex){
+                            byte temp[] = new byte[i];
+                            System.arraycopy(data, 0, temp, 0, i);
+                            data = temp;
                             break;
                         }
                     }
                     raf.close();
 
+                    System.out.println("--- START ---\n"
+                            + "Breaks on : " + i + "\n"
+                            + "Part : " + request.getPart() + "\n"
+                            + "Seek : " + skipIndex + "\n"
+                            + "Size : " + fileSize + "\n"
+                            + "Data : " + data.length + "\n"
+                            + "--- END ---" + "\n");
+
+                    Integer integers[] = new Integer[data.length];
+                    for(i=0;i<data.length;i++)
+                        integers[i] = (int)data[i];
+
                     getFileServerClient()
                             .writeObject(new ResponseDownloadPart(
                                 request.getHash(),
-                                part,
-                                buffer));
+                                request.getPart(),
+                                integers));
 
                     addLog("Dosyanın("
                             + request.getHash() + ") "

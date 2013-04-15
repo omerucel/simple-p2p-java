@@ -12,12 +12,14 @@ public class DownloadManager {
     private WindowClient windowClient;
     private HashMap<String, DownloadData> downloadData;
     private HashMap<String, Map> downloadingFiles;
+    private HashMap<String, ArrayList<FileServerConnection>> downloadingClients;
 
     public DownloadManager(WindowClient windowClient)
     {
         this.windowClient = windowClient;
         this.downloadingFiles = new HashMap<String, Map>();
         this.downloadData = new HashMap<String, DownloadData>();
+        this.downloadingClients = new HashMap<String, ArrayList<FileServerConnection>>();
     }
 
     public WindowClient getWindowClient()
@@ -39,6 +41,7 @@ public class DownloadManager {
         {
             Map fileInfo = getFileInfo(hash);
             downloadData.put(hash, new DownloadData(this,
+                    hash,
                     Integer.parseInt(fileInfo.get("size").toString()),
                     Integer.parseInt(fileInfo.get("total_part").toString()),
                     new File(fileInfo.get("file_path").toString())));
@@ -107,7 +110,7 @@ public class DownloadManager {
         }
     }
 
-    public void downloadFile(String fileHash, ArrayList<Map> clients) throws FileNotFoundException
+    public  void downloadFile(String fileHash, ArrayList<Map> clients) throws FileNotFoundException
     {
         getWindowClient().focusTab(0);
 
@@ -115,7 +118,7 @@ public class DownloadManager {
 
         File file = new File(WindowClientStart.getInstance().getDownloadFolder() + "/" + fileInfo.get("name").toString());
         int size = Integer.parseInt(fileInfo.get("size").toString());
-        int totalPart = (size/524288) + 1;
+        int totalPart = Math.round(size/Config.PART_LIMIT)+1;
 
         Map temp = new LinkedHashMap();
         temp.put("hash", fileHash);
@@ -138,16 +141,29 @@ public class DownloadManager {
 
             try {
                 fileInfo = windowClient.getSearchManager().getFileInfo(fileHash);
-                new Thread(
-                        new FileServerConnection(host, port, fileInfo, this)
-                        ).start();
+                
+                FileServerConnection fileServerConnection = 
+                        new FileServerConnection(host, port, fileInfo, this);
+                if (!downloadingClients.containsKey(fileHash))
+                    downloadingClients.put(fileHash, new ArrayList<FileServerConnection>());
+                downloadingClients.get(fileHash).add(fileServerConnection);
+
+                new Thread(fileServerConnection).start();
             } catch (FileNotFoundException ex) {
             }
         }
     }
 
-    public void downloadedFile(String fileHash) throws FileNotFoundException
+    public void downloadComplete(String fileHash) throws FileNotFoundException
     {
+        addLog("İndirme işlemi tamamlandı.");
+        if (!downloadingClients.containsKey(fileHash)) return;
+
+        for(FileServerConnection fileServerConnection : downloadingClients.get(fileHash))
+        {
+            fileServerConnection.disconnect();
+        }
+
         Map temp = getFileInfo(fileHash);
         File[] files = new File[]{new File(temp.get("file_path").toString())};
         getWindowClient()

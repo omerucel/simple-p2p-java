@@ -5,10 +5,7 @@
 package p2p;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;

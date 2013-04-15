@@ -2,6 +2,7 @@ package p2p.socket.fileserver;
 
 import com.omerucel.socket.IClientEventHandler;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import p2p.socket.FileServerConnection;
 import p2p.socket.RequestDownloadPart;
 import p2p.socket.ResponseConnection;
@@ -23,32 +24,18 @@ public class ConnectionEventHandler implements IClientEventHandler{
     }
 
     public void handleConnected() {
-        new Thread(new Runnable() {
-
-            public void run() {
-                getFileServerConnection()
-                        .getDownloadManager()
-                        .setConnectedClientNumberOnTable(
-                            getFileServerConnection().getFileHash(), true);
-            }
-        }).start();
     }
 
     public void addLog(final String message)
     {
-        new Thread(new Runnable() {
-
-            public void run() {
-                getFileServerConnection()
-                        .getDownloadManager()
-                        .addLog("Dosya("
-                            + getFileServerConnection().getFileHash() 
-                            + ") Sunucu("
-                            + getFileServerConnection().getHost()
-                            + ":" + getFileServerConnection().getPort()
-                            + ") : " + message);
-            }
-        }).start();
+        getFileServerConnection()
+                .getDownloadManager()
+                .addLog("Dosya("
+                    + getFileServerConnection().getFileHash() 
+                    + ") Sunucu("
+                    + getFileServerConnection().getHost()
+                    + ":" + getFileServerConnection().getPort()
+                    + ") : " + message);
     }
 
     public void handleConnectionFailed(Exception ex) {
@@ -57,45 +44,45 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
     public void handleDisconnected() {
         addLog("Bağlantı sonlandı.");
-        new Thread(new Runnable() {
+    }
 
-            public void run() {
-                getFileServerConnection()
-                        .getDownloadManager()
-                        .setConnectedClientNumberOnTable(
-                            getFileServerConnection().getFileHash(), false);
-            }
-        }).start();
+    private void newDownloadRequest()
+    {
+        ArrayList<Integer> parts;
+        try {
+            parts = getFileServerConnection().getDownloadData().getRandomPendingPart(5);
+        } catch (FileNotFoundException ex) {
+            addLog("Yeni parça alınırken bir sorun oluştu.");
+            return;
+        }
+
+        if (parts.isEmpty())
+        {
+            addLog("İndirilecek parça bulunamadı.");
+            return;
+        }
+
+        for(Integer part : parts)
+        {
+            RequestDownloadPart request = new RequestDownloadPart(
+                    getFileServerConnection().getFileHash(), part);
+
+            getFileServerConnection()
+                    .writeObject(request);
+
+            addLog("Parçanın(" + part + ") indirilmesi için istekte bulunuldu.");
+        }
     }
 
     public void handle(Object message) {
         if (message instanceof ResponseConnection){
             addLog("Bağlantı sağlandı.");
 
-            int part;
-            try {
-                part = getFileServerConnection().getDownloadData().getRandomPendingPart();
-            } catch (FileNotFoundException ex) {
-                addLog("Yeni parça alınırken bir sorun oluştu.");
-                return;
-            }
-
-            if (part == 0)
-            {
-                addLog("İndirilecek parça bulunamadı.");
-                return;
-            }
-
-            RequestDownloadPart request = new RequestDownloadPart(
-                    getFileServerConnection().getFileHash(), part);
-            getFileServerConnection()
-                    .writeObject(request);
-
-            addLog("Parçanın(" + part + ") indirilmesi için istekte bulunuldu.");
+            newDownloadRequest();
         }else if (message instanceof ResponseDownloadPart){
             final ResponseDownloadPart response = (ResponseDownloadPart)message;
             try {
-                Boolean isCompleted = getFileServerConnection()
+                getFileServerConnection()
                         .getDownloadData()
                         .saveDownloadedPartAndReturnIsCompleted(
                             response.getPart(),
@@ -103,48 +90,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
                 addLog("Parça(" + response.getPart() + ") indirildi.");
 
-                new Thread(new Runnable() {
-
-                    public void run() {
-                        getFileServerConnection()
-                                .getDownloadManager()
-                                .incrementDownloadedFilePartNumberOnTable(response.getHash());
-                    }
-                }).start();
-
-                if (!isCompleted)
-                {
-                    int part;
-                    try {
-                        part = getFileServerConnection().getDownloadData().getRandomPendingPart();
-                    } catch (FileNotFoundException ex) {
-                        addLog("Yeni parça alınırken bir sorun oluştu.");
-                        return;
-                    }
-
-                    RequestDownloadPart request = new RequestDownloadPart(
-                            getFileServerConnection().getFileHash(),
-                            part);
-                    getFileServerConnection().writeObject(request);
-
-                    addLog("Parçanın(" + part + ") indirilmesi için istekte bulunuldu.");
-                }else{
-                    addLog("Tüm parçalar indirildi.");
-
-                    new Thread(new Runnable() {
-
-                        public void run() {
-                            getFileServerConnection().disconnect();
-                            try {
-                                getFileServerConnection()
-                                        .getDownloadManager()
-                                        .downloadedFile(response.getHash());
-                            } catch (FileNotFoundException ex) {
-                                addLog("İndirilen dosya paylaşılan dosyalar arasına eklenirken bir sorun oluştu : " + ex.getMessage());
-                            }
-                        }
-                    }).start();
-                }
+                newDownloadRequest();
             } catch (FileNotFoundException ex) {
                 addLog("Parça(" + response.getPart() + ") kaydedilirken sorun oluştu.");
             }

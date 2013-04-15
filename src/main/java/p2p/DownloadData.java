@@ -1,6 +1,7 @@
 package p2p;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.Random;
 
 public class DownloadData {
     private DownloadManager downloadManager;
+    private String fileHash;
     private int totalPart;
     private int fileSize;
     private File downloadPath;
@@ -15,12 +17,13 @@ public class DownloadData {
     private ArrayList<Integer> downloadingParts;
     private ArrayList<Integer> downloadedParts;
 
-    public DownloadData(DownloadManager downloadManager, int fileSize, int totalPart, File downloadPath)
+    public DownloadData(DownloadManager downloadManager, String fileHash, int fileSize, int totalPart, File downloadPath)
     {
         this.downloadManager = downloadManager;
         this.fileSize = fileSize;
         this.totalPart = totalPart;
         this.downloadPath = downloadPath;
+        this.fileHash = fileHash;
         pendingParts = new ArrayList<Integer>();
         downloadedParts = new ArrayList<Integer>();
         downloadingParts = new ArrayList<Integer>();
@@ -29,20 +32,32 @@ public class DownloadData {
             pendingParts.add(i+1);
     }
 
-    public synchronized Integer getRandomPendingPart()
+    public DownloadManager getDownloadManager()
     {
-        Integer randomNumber = (new Random()).nextInt(pendingParts.size());
-        Integer part = pendingParts.remove(randomNumber.intValue());
-        downloadingParts.add(part);
-        return part;
+        return downloadManager;
     }
 
-    public synchronized Boolean isCompleted()
+    public synchronized ArrayList<Integer> getRandomPendingPart(int max)
     {
-        return pendingParts.isEmpty();
+        ArrayList<Integer> parts = new ArrayList<Integer>();
+
+        for(int i=0;i<max;i++)
+        {
+            if (pendingParts.isEmpty()) break;
+
+            Integer randomNumber = 0;
+            if (!pendingParts.isEmpty())
+                randomNumber = (new Random()).nextInt(pendingParts.size());
+
+            Integer part = pendingParts.remove(randomNumber.intValue());
+            downloadingParts.add(part);
+            parts.add(part);
+        }
+
+        return parts;
     }
 
-    public synchronized Boolean saveDownloadedPartAndReturnIsCompleted(Integer part, ArrayList<Integer> data)
+    public synchronized void saveDownloadedPartAndReturnIsCompleted(Integer part, Integer[] data) throws FileNotFoundException
     {
         try {
             Boolean setFileSize = false;
@@ -50,14 +65,22 @@ public class DownloadData {
                 setFileSize = true;
             RandomAccessFile raf = new RandomAccessFile(downloadPath, "rw");
             if (setFileSize)
-            {
-                System.out.println("Dosya boyutlandırılıyor");
                 raf.setLength(fileSize);
-            }
 
-            raf.seek(part*524288);
-            for(Integer i : data)
-                raf.writeInt(i);
+            int skipIndex = ((part-1)*Config.PART_LIMIT);
+            byte[] bytes = new byte[data.length];
+            for(int i=0;i<data.length;i++)
+                bytes[i] = data[i].byteValue();
+
+            System.out.println("--- START ---");
+            System.out.println("Part : " + part);
+            System.out.println("Seek : " + skipIndex);
+            System.out.println("Size : " + fileSize);
+            System.out.println("Data : " + bytes.length);
+            System.out.println("--- END ---");
+
+            raf.seek(skipIndex);
+            raf.write(bytes);
             raf.close();
             downloadingParts.remove(part);
             downloadedParts.add(part);
@@ -66,6 +89,10 @@ public class DownloadData {
             pendingParts.add(part);
         }
 
-        return pendingParts.isEmpty();
+        if (pendingParts.isEmpty() && downloadingParts.isEmpty()
+                && downloadedParts.size() == totalPart)
+        {
+            downloadManager.downloadComplete(fileHash);
+        }
     }
 }
