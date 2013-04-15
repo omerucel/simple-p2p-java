@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class DownloadData {
-    private WindowClient windowClient;
+    private DownloadManager downloadManager;
     private int totalPart;
     private int fileSize;
     private File downloadPath;
@@ -15,8 +15,9 @@ public class DownloadData {
     private ArrayList<Integer> downloadingParts;
     private ArrayList<Integer> downloadedParts;
 
-    public DownloadData(WindowClient windowClient, int fileSize, int totalPart, File downloadPath)
+    public DownloadData(DownloadManager downloadManager, int fileSize, int totalPart, File downloadPath)
     {
+        this.downloadManager = downloadManager;
         this.fileSize = fileSize;
         this.totalPart = totalPart;
         this.downloadPath = downloadPath;

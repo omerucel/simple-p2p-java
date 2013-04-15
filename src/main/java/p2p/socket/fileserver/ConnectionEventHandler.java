@@ -27,7 +27,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
             public void run() {
                 getFileServerConnection()
-                        .getWindowClient()
+                        .getDownloadManager()
                         .setConnectedClientNumberOnTable(
                             getFileServerConnection().getFileHash(), true);
             }
@@ -40,7 +40,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
             public void run() {
                 getFileServerConnection()
-                        .getWindowClient()
+                        .getDownloadManager()
                         .addLog("Dosya("
                             + getFileServerConnection().getFileHash() 
                             + ") Sunucu("
@@ -61,7 +61,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
             public void run() {
                 getFileServerConnection()
-                        .getWindowClient()
+                        .getDownloadManager()
                         .setConnectedClientNumberOnTable(
                             getFileServerConnection().getFileHash(), false);
             }
@@ -107,7 +107,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
                     public void run() {
                         getFileServerConnection()
-                                .getWindowClient()
+                                .getDownloadManager()
                                 .incrementDownloadedFilePartNumberOnTable(response.getHash());
                     }
                 }).start();
@@ -137,7 +137,7 @@ public class ConnectionEventHandler implements IClientEventHandler{
                             getFileServerConnection().disconnect();
                             try {
                                 getFileServerConnection()
-                                        .getWindowClient()
+                                        .getDownloadManager()
                                         .downloadedFile(response.getHash());
                             } catch (FileNotFoundException ex) {
                                 addLog("İndirilen dosya paylaşılan dosyalar arasına eklenirken bir sorun oluştu : " + ex.getMessage());

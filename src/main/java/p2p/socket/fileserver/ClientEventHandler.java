@@ -36,6 +36,7 @@ public class ClientEventHandler implements IClientEventHandler{
                 getFileServerClient()
                         .getFileServer()
                         .getWindowClient()
+                        .getDownloadManager()
                         .addLog("İstemci("
                             + getFileServerClient().getClientIdentity().getId()
                             + ") : " + message);

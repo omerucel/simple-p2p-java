@@ -51,6 +51,7 @@ public class ServerEventHandler implements IServerEventHandler{
     public void handleClientConnectionFailed(Exception ex) {
         getFileServer()
                 .getWindowClient()
+                .getDownloadManager()
                 .addLog("İstemci bağlanırken bir sorun yaşandı : " + ex.getMessage());
     }
 

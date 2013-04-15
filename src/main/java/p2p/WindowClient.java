@@ -5,23 +5,18 @@
 package p2p;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.tika.Tika;
-import p2p.socket.RequestAddFile;
 import p2p.socket.RequestFileClients;
-import p2p.socket.RequestRemoveFile;
 
 /**
  *
@@ -32,11 +27,10 @@ public class WindowClient extends WindowAbstract {
     private static WindowClient instance;
     SearchManager searchManager;
     ShareManager shareManager;
+    DownloadManager downloadManager;
     DefaultTableModel downloadTableModel;
     DefaultTableModel searchTableModel;
     DefaultTableModel shareTableModel;
-    private HashMap<String, Map> downloadingFiles;
-    private HashMap<String, DownloadData> downloadData;
 
     public static WindowClient getInstance()
     {
@@ -82,15 +76,13 @@ public class WindowClient extends WindowAbstract {
 
         setLocationRelativeTo(null);
 
-        downloadingFiles = new HashMap<String, Map>();
-        downloadData = new HashMap<String, DownloadData>();
-
         shareTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         downloadTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         searchTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         searchManager = new SearchManager(this);
         shareManager = new ShareManager(this);
+        downloadManager = new DownloadManager(this);
     }
 
     public SearchManager getSearchManager()
@@ -103,6 +95,11 @@ public class WindowClient extends WindowAbstract {
         return shareManager;
     }
 
+    public DownloadManager getDownloadManager()
+    {
+        return downloadManager;
+    }
+
     public JTable getSearchTable()
     {
         return searchTable;
@@ -111,6 +108,11 @@ public class WindowClient extends WindowAbstract {
     public JTable getShareTable()
     {
         return shareTable;
+    }
+
+    public JTable getDownloadTable()
+    {
+        return downloadTable;
     }
 
     public DefaultTableModel getSearchTableModel()
@@ -123,121 +125,31 @@ public class WindowClient extends WindowAbstract {
         return shareTableModel;
     }
 
+    public DefaultTableModel getDownloadTableModel()
+    {
+        return downloadTableModel;
+    }
+
     public JTextField getSearchBox()
     {
         return searchBox;
     }
 
-    public void focusDownloadingTab()
+    public JTextArea getDownloadLog()
     {
-        jTabbedPane1.setSelectedIndex(0);
+        return downloadLog;
     }
 
-    public synchronized void addLog(String message)
+    public void focusTab(int index)
     {
-        downloadLog.setText(downloadLog.getText() + message + "\n");
-    }
-
-    public synchronized void incrementDownloadedFilePartNumberOnTable(String hash)
-    {
-        int number=0;
-        for(int i = 0; i < downloadTableModel.getRowCount(); i++)
-        {
-            if (downloadTableModel.getValueAt(i, 0).equals(hash))
-            {
-                number = Integer.parseInt(downloadTableModel.getValueAt(i, 5).toString());
-                downloadTableModel.setValueAt(number+1, i, 5);
-
-                number = Integer.parseInt(downloadTableModel.getValueAt(i, 6).toString());
-                downloadTableModel.setValueAt(number-1, i, 6);
-            }
-        }
-    }
-
-    public synchronized void setConnectedClientNumberOnTable(String hash, Boolean increment)
-    {
-        int number=0;
-        for(int i = 0; i < downloadTableModel.getRowCount(); i++)
-        {
-            if (downloadTableModel.getValueAt(i, 0).equals(hash))
-            {
-                number = Integer.parseInt(downloadTableModel.getValueAt(i, 4).toString());
-                if (increment)
-                {
-                    downloadTableModel.setValueAt(number+1, i, 4);
-                }else{
-                    downloadTableModel.setValueAt(number-1, i, 4);
-                }
-            }
-        }
-    }
-
-    public synchronized void addToDownloadingFiles(String fileHash) throws FileNotFoundException
-    {
-        Map fileInfo = searchManager.getFileInfo(fileHash);
-
-        File file = new File(WindowClientStart.getInstance().getDownloadFolder() + "/" + fileInfo.get("name").toString());
-        int size = Integer.parseInt(fileInfo.get("size").toString());
-        int totalPart = (size/524288) + 1;
-
-        Map temp = new LinkedHashMap();
-        temp.put("hash", fileHash);
-        temp.put("name", fileInfo.get("name"));
-        temp.put("file_type", fileInfo.get("file_type"));
-        temp.put("size", size);
-        temp.put("file_path", file.getAbsolutePath());
-        temp.put("total_part", totalPart);
-        downloadingFiles.put(fileHash, temp);
-
-        downloadTableModel.addRow(new Object[]{fileHash, fileInfo.get("name"), 
-            fileInfo.get("file_type"), size, 0,
-            0, totalPart, totalPart});
-    }
-
-    public synchronized DownloadData getDownloadData(String hash) throws FileNotFoundException
-    {
-        if (!downloadData.containsKey(hash))
-        {
-            Map fileInfo = getDownloadFileInfo(hash);
-            downloadData.put(hash, new DownloadData(this,
-                    Integer.parseInt(fileInfo.get("size").toString()),
-                    Integer.parseInt(fileInfo.get("total_part").toString()),
-                    new File(fileInfo.get("file_path").toString())));
-        }
-
-        return downloadData.get(hash);
-    }
-
-    public synchronized void downloadedFile(String hash) throws FileNotFoundException
-    {
-        Map temp = getDownloadFileInfo(hash);
-        File[] files = new File[]{new File(temp.get("file_path").toString())};
-        shareManager.addFiles(files);
-        downloadingFiles.remove(hash);
-        downloadData.remove(hash);
-    }
-
-    public Map getDownloadFileInfo(String hash) throws FileNotFoundException
-    {
-        if (!downloadingFiles.containsKey(hash))
-            throw new FileNotFoundException("İstenilen dosya paylaşımda değil.");
-
-        return downloadingFiles.get(hash);
+        jTabbedPane1.setSelectedIndex(index);
     }
 
     public void reset()
     {
-        clearDownloadTable();
+        downloadManager.clear();
         shareManager.clear();
         searchManager.clear();
-    }
-
-    public void clearDownloadTable()
-    {
-        downloadLog.setText("");
-        downloadingFiles.clear();
-        downloadData.clear();
-        downloadTableModel.setRowCount(0);
     }
 
     public void showClientSelectDialog(String fileHash, ArrayList<Map> fileClients)
@@ -524,7 +436,7 @@ public class WindowClient extends WindowAbstract {
             return;
         }
 
-        if (downloadingFiles.containsKey(hash))
+        if (downloadManager.hasFile(hash))
         {
             DialogLoading.getInstance().toggle(false);
             showErrorMessage("Bu dosyayı zaten indiriyorsunuz!");

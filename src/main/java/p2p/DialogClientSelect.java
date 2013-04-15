@@ -6,7 +6,10 @@ package p2p;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import p2p.socket.FileServerConnection;
@@ -130,30 +133,25 @@ public class DialogClientSelect extends javax.swing.JDialog {
         }else{
             DialogLoading.getInstance().toggle(true);
             WindowClient windowClient = (WindowClient)getParent();
-            try {
-                windowClient.addToDownloadingFiles(fileHash);
-            } catch (FileNotFoundException ex) {
-                DialogLoading.getInstance().toggle(false);
-                JOptionPane.showMessageDialog(this, "Dosya indirme işlemi hazırlanırken bir sorun oluştu!");
-                return;
-            }
 
-            windowClient.focusDownloadingTab();
             int[] indexes = clientTable.getSelectedRows();
+            ArrayList<Map> clients = new ArrayList<Map>();
             for(int i : indexes)
             {
                 String host = clientTableModel.getValueAt(i, 0).toString();
                 int port = Integer.parseInt(clientTableModel.getValueAt(i, 1).toString());
-                Map fileInfo;
-                try {
-                    fileInfo = windowClient.getSearchManager().getFileInfo(fileHash);
-                    new Thread(new FileServerConnection(
-                                host, port, fileInfo, windowClient
-                            )).start();
-                } catch (FileNotFoundException ex) {
-                }
+
+                Map temp = new LinkedHashMap();
+                temp.put("host", host);
+                temp.put("port", port);
+                clients.add(temp);
             }
             DialogLoading.getInstance().toggle(false);
+            try {
+                windowClient.getDownloadManager().downloadFile(fileHash, clients);
+            } catch (FileNotFoundException ex) {
+                JOptionPane.showMessageDialog(this, "Dosya indirme işlemi hazırlanırken bir sorun oluştu.");
+            }
             this.setVisible(false);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
