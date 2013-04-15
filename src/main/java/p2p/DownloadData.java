@@ -72,18 +72,22 @@ public class DownloadData {
             for(int i=0;i<data.length;i++)
                 bytes[i] = data[i].byteValue();
 
+            /*
             System.out.println("--- START ---");
             System.out.println("Part : " + part);
             System.out.println("Seek : " + skipIndex);
             System.out.println("Size : " + fileSize);
             System.out.println("Data : " + bytes.length);
             System.out.println("--- END ---");
+            * */
 
             raf.seek(skipIndex);
             raf.write(bytes);
             raf.close();
             downloadingParts.remove(part);
             downloadedParts.add(part);
+
+            downloadManager.incrementDownloadedFilePartNumberOnTable(fileHash);
         } catch (IOException ex) {
             downloadingParts.remove(part);
             pendingParts.add(part);

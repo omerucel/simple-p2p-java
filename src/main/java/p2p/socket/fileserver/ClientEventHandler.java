@@ -96,6 +96,7 @@ public class ClientEventHandler implements IClientEventHandler{
                     }
                     raf.close();
 
+                    /*
                     System.out.println("--- START ---\n"
                             + "Breaks on : " + i + "\n"
                             + "Part : " + request.getPart() + "\n"
@@ -103,6 +104,7 @@ public class ClientEventHandler implements IClientEventHandler{
                             + "Size : " + fileSize + "\n"
                             + "Data : " + data.length + "\n"
                             + "--- END ---" + "\n");
+                            * */
 
                     Integer integers[] = new Integer[data.length];
                     for(i=0;i<data.length;i++)

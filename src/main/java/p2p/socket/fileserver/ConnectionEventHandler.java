@@ -24,6 +24,10 @@ public class ConnectionEventHandler implements IClientEventHandler{
     }
 
     public void handleConnected() {
+        getFileServerConnection()
+                .getDownloadManager()
+                .setConnectedClientNumberOnTable(
+                    getFileServerConnection().getFileHash(), true);
     }
 
     public void addLog(final String message)
@@ -40,17 +44,27 @@ public class ConnectionEventHandler implements IClientEventHandler{
 
     public void handleConnectionFailed(Exception ex) {
         addLog("Bağlanırken bir sorun oluştu : " + ex.getMessage());
+
+        getFileServerConnection()
+                .getDownloadManager()
+                .setConnectedClientNumberOnTable(
+                    getFileServerConnection().getFileHash(), false);
     }
 
     public void handleDisconnected() {
         addLog("Bağlantı sonlandı.");
+
+        getFileServerConnection()
+                .getDownloadManager()
+                .setConnectedClientNumberOnTable(
+                    getFileServerConnection().getFileHash(), false);
     }
 
     private void newDownloadRequest()
     {
         ArrayList<Integer> parts;
         try {
-            parts = getFileServerConnection().getDownloadData().getRandomPendingPart(5);
+            parts = getFileServerConnection().getDownloadData().getRandomPendingPart(1);
         } catch (FileNotFoundException ex) {
             addLog("Yeni parça alınırken bir sorun oluştu.");
             return;
