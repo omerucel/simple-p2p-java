@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.JFileChooser;
+import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -19,7 +21,6 @@ import org.apache.tika.Tika;
 import p2p.socket.RequestAddFile;
 import p2p.socket.RequestFileClients;
 import p2p.socket.RequestRemoveFile;
-import p2p.socket.RequestSearch;
 
 /**
  *
@@ -28,12 +29,12 @@ import p2p.socket.RequestSearch;
 public class WindowClient extends WindowAbstract {
 
     private static WindowClient instance;
+    SearchManager searchManager;
     DefaultTableModel downloadTableModel;
     DefaultTableModel searchTableModel;
     DefaultTableModel shareTableModel;
     private HashMap<String, Map> sharedFiles;
     private HashMap<String, Map> downloadingFiles;
-    private HashMap<String, Map> searchFiles;
     private HashMap<String, DownloadData> downloadData;
 
     public static WindowClient getInstance()
@@ -82,12 +83,33 @@ public class WindowClient extends WindowAbstract {
 
         sharedFiles = new HashMap<String, Map>();
         downloadingFiles = new HashMap<String, Map>();
-        searchFiles = new HashMap<String, Map>();
         downloadData = new HashMap<String, DownloadData>();
 
         shareTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         downloadTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         searchTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        searchManager = new SearchManager(this);
+    }
+
+    public SearchManager getSearchManager()
+    {
+        return searchManager;
+    }
+
+    public JTable getSearchTable()
+    {
+        return searchTable;
+    }
+
+    public DefaultTableModel getSearchTableModel()
+    {
+        return searchTableModel;
+    }
+
+    public JTextField getSearchBox()
+    {
+        return searchBox;
     }
 
     public void focusDownloadingTab()
@@ -136,7 +158,7 @@ public class WindowClient extends WindowAbstract {
 
     public synchronized void addToDownloadingFiles(String fileHash) throws FileNotFoundException
     {
-        Map fileInfo = getSearchFileInfo(fileHash);
+        Map fileInfo = searchManager.getFileInfo(fileHash);
 
         File file = new File(WindowClientStart.getInstance().getDownloadFolder() + "/" + fileInfo.get("name").toString());
         int size = Integer.parseInt(fileInfo.get("size").toString());
@@ -177,14 +199,6 @@ public class WindowClient extends WindowAbstract {
         addSharedFiles(files);
         downloadingFiles.remove(hash);
         downloadData.remove(hash);
-    }
-
-    public Map getSearchFileInfo(String hash) throws FileNotFoundException
-    {
-        if (!searchFiles.containsKey(hash))
-            throw new FileNotFoundException("İstenilen dosya paylaşımda değil.");
-
-        return searchFiles.get(hash);
     }
 
     public Map getFileInfo(String hash) throws FileNotFoundException
@@ -247,7 +261,6 @@ public class WindowClient extends WindowAbstract {
     public void reset()
     {
         clearDownloadTable();
-        clearSearchTable();
         clearShareTable();
     }
 
@@ -259,32 +272,10 @@ public class WindowClient extends WindowAbstract {
         downloadTableModel.setRowCount(0);
     }
 
-    public void clearSearchTable()
-    {
-        searchBox.setText("");
-        searchFiles.clear();
-        searchTableModel.setRowCount(0);
-    }
-
     public void clearShareTable()
     {
         sharedFiles.clear();
         shareTableModel.setRowCount(0);
-    }
-
-    public synchronized void addFileToSearchTable(String hash, String name, String fileType, int size,
-            int clientCount)
-    {
-        Map temp = new LinkedHashMap();
-        temp.put("hash", hash);
-        temp.put("name", name);
-        temp.put("file_type", fileType);
-        temp.put("size", size);
-        temp.put("client_count", clientCount);
-        searchFiles.put(hash, temp);
-
-        searchTableModel.addRow(new Object[]{hash, name, 
-            fileType, size, clientCount});
     }
 
     public void showClientSelectDialog(String fileHash, ArrayList<Map> fileClients)
@@ -553,11 +544,7 @@ public class WindowClient extends WindowAbstract {
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
 
         DialogLoading.getInstance().toggle(true);
-        this.clearSearchTable();
-
-        RequestSearch requestSearch = new RequestSearch(searchBox.getText().toString());
-
-        ObjectContainer.getMainServerConnection().writeObject(requestSearch);
+        searchManager.search();
     }//GEN-LAST:event_searchButtonActionPerformed
 
     private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
@@ -573,7 +560,7 @@ public class WindowClient extends WindowAbstract {
 
         String hash = searchTableModel.getValueAt(selectedIndex, 0).toString();
 
-        if (!searchFiles.containsKey(hash))
+        if (!searchManager.hasFile(hash))
         {
             DialogLoading.getInstance().toggle(false);
             showErrorMessage("Lütfen bir dosya seçiniz!");

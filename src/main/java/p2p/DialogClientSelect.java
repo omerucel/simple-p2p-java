@@ -146,7 +146,7 @@ public class DialogClientSelect extends javax.swing.JDialog {
                 int port = Integer.parseInt(clientTableModel.getValueAt(i, 1).toString());
                 Map fileInfo;
                 try {
-                    fileInfo = windowClient.getSearchFileInfo(fileHash);
+                    fileInfo = windowClient.getSearchManager().getFileInfo(fileHash);
                     new Thread(new FileServerConnection(
                                 host, port, fileInfo, windowClient
                             )).start();

@@ -93,7 +93,8 @@ public class ConnectionEventHandler implements IClientEventHandler{
             {
                 getMainServerConnection()
                         .getWindowClient()
-                        .addFileToSearchTable(
+                        .getSearchManager()
+                        .addFile(
                             temp.get("hash").toString(),
                             temp.get("name").toString(),
                             temp.get("file_type").toString(),
