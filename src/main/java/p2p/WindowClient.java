@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
@@ -30,10 +31,10 @@ public class WindowClient extends WindowAbstract {
 
     private static WindowClient instance;
     SearchManager searchManager;
+    ShareManager shareManager;
     DefaultTableModel downloadTableModel;
     DefaultTableModel searchTableModel;
     DefaultTableModel shareTableModel;
-    private HashMap<String, Map> sharedFiles;
     private HashMap<String, Map> downloadingFiles;
     private HashMap<String, DownloadData> downloadData;
 
@@ -81,7 +82,6 @@ public class WindowClient extends WindowAbstract {
 
         setLocationRelativeTo(null);
 
-        sharedFiles = new HashMap<String, Map>();
         downloadingFiles = new HashMap<String, Map>();
         downloadData = new HashMap<String, DownloadData>();
 
@@ -90,6 +90,7 @@ public class WindowClient extends WindowAbstract {
         searchTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         searchManager = new SearchManager(this);
+        shareManager = new ShareManager(this);
     }
 
     public SearchManager getSearchManager()
@@ -97,14 +98,29 @@ public class WindowClient extends WindowAbstract {
         return searchManager;
     }
 
+    public ShareManager getShareManager()
+    {
+        return shareManager;
+    }
+
     public JTable getSearchTable()
     {
         return searchTable;
     }
 
+    public JTable getShareTable()
+    {
+        return shareTable;
+    }
+
     public DefaultTableModel getSearchTableModel()
     {
         return searchTableModel;
+    }
+
+    public DefaultTableModel getShareTableModel()
+    {
+        return shareTableModel;
     }
 
     public JTextField getSearchBox()
@@ -196,17 +212,9 @@ public class WindowClient extends WindowAbstract {
     {
         Map temp = getDownloadFileInfo(hash);
         File[] files = new File[]{new File(temp.get("file_path").toString())};
-        addSharedFiles(files);
+        shareManager.addFiles(files);
         downloadingFiles.remove(hash);
         downloadData.remove(hash);
-    }
-
-    public Map getFileInfo(String hash) throws FileNotFoundException
-    {
-        if (!sharedFiles.containsKey(hash))
-            throw new FileNotFoundException("İstenilen dosya paylaşımda değil.");
-
-        return sharedFiles.get(hash);
     }
 
     public Map getDownloadFileInfo(String hash) throws FileNotFoundException
@@ -217,51 +225,11 @@ public class WindowClient extends WindowAbstract {
         return downloadingFiles.get(hash);
     }
 
-    public void addSharedFiles(File[] selectedFiles)
-    {
-        Tika tika = new Tika();
-
-        FileInputStream inputStream;
-        RequestAddFile requestAddFile = new RequestAddFile();
-        for(File file : selectedFiles)
-        {
-            try {
-                inputStream = new FileInputStream(file);
-                String name = file.getAbsoluteFile().getName();
-                Long size = file.length();
-                String fileType = tika.detect(file);
-                String hash = DigestUtils.md5Hex(inputStream);
-
-                if (!sharedFiles.containsKey(hash))
-                {
-
-                    requestAddFile.addFile(hash, name, size.intValue(), fileType);
-                    shareTableModel.addRow(new Object[]{
-                        hash, name, fileType, size.intValue(), file.getAbsolutePath()});
-
-                    Map temp = new LinkedHashMap();
-                    temp.put("hash", hash);
-                    temp.put("name", name);
-                    temp.put("file_type", fileType);
-                    temp.put("size", size.intValue());
-                    temp.put("file_path", file.getAbsolutePath());
-
-                    sharedFiles.put(hash, temp);
-                }
-            } catch (Exception ex) {
-                showErrorMessage(ex.getMessage());
-                continue;
-            }
-        }
-
-        DialogLoading.getInstance().toggle(true);
-        ObjectContainer.getMainServerConnection().writeObject(requestAddFile);
-    }
-
     public void reset()
     {
         clearDownloadTable();
-        clearShareTable();
+        shareManager.clear();
+        searchManager.clear();
     }
 
     public void clearDownloadTable()
@@ -270,12 +238,6 @@ public class WindowClient extends WindowAbstract {
         downloadingFiles.clear();
         downloadData.clear();
         downloadTableModel.setRowCount(0);
-    }
-
-    public void clearShareTable()
-    {
-        sharedFiles.clear();
-        shareTableModel.setRowCount(0);
     }
 
     public void showClientSelectDialog(String fileHash, ArrayList<Map> fileClients)
@@ -520,25 +482,13 @@ public class WindowClient extends WindowAbstract {
         {
             File[] selectedFiles = fc.getSelectedFiles();
 
-            addSharedFiles(selectedFiles);
+            shareManager.addFiles(selectedFiles);
         }
     }//GEN-LAST:event_dosyaEkleActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 
-        int[] indexes =  shareTable.getSelectedRows();
-
-        String hash;
-        RequestRemoveFile requestRemoveFile = new RequestRemoveFile();
-        for(int i : indexes)
-        {
-            hash = shareTableModel.getValueAt(i, 0).toString();
-            sharedFiles.remove(hash);
-            requestRemoveFile.addFile(hash);
-            shareTableModel.removeRow(i);
-        }
-
-        ObjectContainer.getMainServerConnection().writeObject(requestRemoveFile);
+        shareManager.removeFiles();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
@@ -567,7 +517,7 @@ public class WindowClient extends WindowAbstract {
             return;
         }
 
-        if (sharedFiles.containsKey(hash))
+        if (shareManager.hasFile(hash))
         {
             DialogLoading.getInstance().toggle(false);
             showErrorMessage("Bu dosyayı zaten paylaşmaktasınız!");

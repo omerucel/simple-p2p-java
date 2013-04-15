@@ -69,6 +69,7 @@ public class ClientEventHandler implements IClientEventHandler{
                 fileInfo = getFileServerClient()
                         .getFileServer()
                         .getWindowClient()
+                        .getShareManager()
                         .getFileInfo(request.getHash());
                 int fileSize = Integer.parseInt(fileInfo.get("size").toString());
                 int totalPart = (fileSize/524288) + 1;
